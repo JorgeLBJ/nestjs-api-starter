@@ -12,7 +12,7 @@ COPY package*.json .
 
 RUN --mount=type=cache,target=/root/.npm \
     echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
-    npm ci && \
+    npm ci --ignore-scripts && \
     rm -f .npmrc
 
 COPY tsconfig*.json .
@@ -29,7 +29,7 @@ RUN apk update && apk add --no-cache dumb-init
 COPY package*.json .
 RUN --mount=type=cache,target=/root/.npm \
     echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ".npmrc" && \
-    npm ci && \
+    npm ci --ignore-scripts && \
     rm -f .npmrc
 
 COPY tsconfig*.json .

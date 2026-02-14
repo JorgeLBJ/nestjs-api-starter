@@ -50,6 +50,9 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(port, '0.0.0.0');
 
+  // Habilitar graceful shutdown
+  app.enableShutdownHooks();
+
   const logger = app.get(Logger);
   logger.log('Helmet security headers enabled');
   logger.log(

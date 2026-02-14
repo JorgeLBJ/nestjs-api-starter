@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  my-service-production:
-    container_name: my-service-production
+  nest-api-starter-production:
+    container_name: nest-api-starter-production
     build:
       target: production
       context: .
@@ -19,8 +19,8 @@ services:
           cpus: '0.25'
           memory: '256m'
 
-  my-service-dev:
-    container_name: my-service-dev
+  nest-api-starter-dev:
+    container_name: nest-api-starter-dev
     restart: unless-stopped
     env_file: .env
     build:
@@ -37,7 +37,7 @@ services:
       resources:
         limits:
           cpus: '1'
-          memory: '512m'
+          memory: '1.5g'
         reservations:
           cpus: '0.25'
-          memory: '256m'
+          memory: '512m'

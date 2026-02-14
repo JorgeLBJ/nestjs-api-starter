@@ -43,6 +43,11 @@ Esta plantilla va más allá de un proyecto NestJS básico. Incluye configuracio
 
 7. **✅ Conventional Commits** - Commits estandarizados con commitlint.
 
+8. **🤖 GitHub Actions CI** - Pipeline de integración continua configurado para validar:
+   - Linting y formato
+   - Build exitoso
+   - Ejecución de tests unitarios
+
 ### Testing
 
 8. **🧪 Jest configurado** - Testing unitario y e2e listo para usar:
@@ -877,31 +882,7 @@ Genera y rastrea un ID único para cada request, facilitando el debugging y traz
 
 ---
 
-#### 2. **Graceful Shutdown**
-
-Implementa un cierre limpio de la aplicación que espera a que los requests en curso terminen antes de cerrar.
-
-**Implementación sugerida:**
-
-```typescript
-// main.ts
-app.enableShutdownHooks();
-
-// Manejo de señales SIGTERM/SIGINT
-process.on('SIGTERM', async () => {
-  await app.close();
-});
-```
-
-**Beneficios:**
-
-- ✅ Deployments sin downtime
-- ✅ No se pierden requests en curso
-- ✅ Cierre limpio de conexiones a bases de datos
-
----
-
-#### 3. **Global Exception Filter**
+#### 2. **Global Exception Filter**
 
 Maneja todas las excepciones de forma consistente en un solo lugar.
 
@@ -927,7 +908,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
 ### 🟡 Prioridad Media (Útil para BFF)
 
-#### 4. **Compression Middleware**
+#### 3. **Compression Middleware**
 
 Comprime las respuestas HTTP usando gzip/brotli para reducir el tamaño de la transferencia.
 
@@ -953,7 +934,7 @@ await app.register(fastifyCompress, {
 
 ---
 
-#### 5. **Response Interceptor**
+#### 4. **Response Interceptor**
 
 Transforma todas las respuestas a un formato consistente con metadata adicional.
 
@@ -979,7 +960,7 @@ Transforma todas las respuestas a un formato consistente con metadata adicional.
 
 ---
 
-#### 6. **API Versioning**
+#### 5. **API Versioning**
 
 Permite mantener múltiples versiones de tu API simultáneamente.
 
@@ -1010,7 +991,7 @@ export class UsersV2Controller {}
 
 ### 🔵 Prioridad Baja (Nice to Have)
 
-#### 7. **Custom Metadata Decorators**
+#### 6. **Custom Metadata Decorators**
 
 Crea decorators personalizados para roles, permisos, etc. Útil como preparación para autenticación futura.
 
@@ -1042,7 +1023,6 @@ export class AdminController {
 | Mejora                  | Prioridad | Complejidad | Impacto | Recomendado para |
 | ----------------------- | --------- | ----------- | ------- | ---------------- |
 | Request ID Tracking     | 🟢 Alta   | Baja        | Alto    | Producción       |
-| Graceful Shutdown       | 🟢 Alta   | Baja        | Alto    | Producción       |
 | Global Exception Filter | 🟢 Alta   | Media       | Alto    | Producción       |
 | Compression             | 🟡 Media  | Baja        | Medio   | BFF              |
 | Response Interceptor    | 🟡 Media  | Baja        | Medio   | BFF              |
