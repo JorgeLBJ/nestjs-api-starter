@@ -1,20 +1,24 @@
+import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import fastifyCors from '@fastify/cors';
-import fastifyHelmet from '@fastify/helmet';
 
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/app-config.service';
+import { AppLoggerService } from './contexts/shared/logger/app-logger.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
+    { bufferLogs: true },
   );
+
+  app.useLogger(app.get(AppLoggerService));
 
   await app.register(fastifyHelmet);
 

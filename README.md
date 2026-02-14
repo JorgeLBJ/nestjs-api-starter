@@ -66,19 +66,14 @@ Esta plantilla va más allá de un proyecto NestJS básico. Incluye configuracio
 ### Configuración
 
 10. **📦 Validación de variables de entorno** - Usando Joi para validar configuración en startup.
-11. **🔧 Logger configurable** - Módulo de logging global con niveles configurables.
-
-### Seguridad
-
+11. **🔧 Logger con Correlation ID** - Módulo de logging global con trazabilidad automática de peticiones (`x-request-id`) usando `nestjs-cls`.
 12. **🛡️ Helmet** - Headers de seguridad HTTP automáticos (CSP, X-Frame-Options, HSTS, etc).
 13. **🌐 CORS** - Configuración completa de CORS mediante variables de entorno con validación de seguridad.
-
-### Arquitectura
-
 14. **🏛️ Arquitectura por contextos** - Organización inspirada en DDD:
     - Separación clara por dominios de negocio
     - Contextos auto-contenidos
     - Escalabilidad para proyectos grandes
+    - **Request ID Tracking** incluido de serie
 
 ## 📁 Estructura del Proyecto
 
@@ -700,9 +695,16 @@ Ubicación: `test/e2e/contexts/shared/`
 npm run test:e2e
 ```
 
-### Request Context - Language & TimeZone
+### Request Context - Language, TimeZone & Request ID
 
-Esta plantilla incluye un sistema de **Request Context** que captura automáticamente los headers `Accept-Language` y `Time-Zone` de cada request, haciéndolos disponibles en todos los controllers mediante decorators personalizados.
+Esta plantilla incluye un sistema de **Request Context** que captura automáticamente los headers `Accept-Language`, `Time-Zone` y `x-request-id` de cada request, haciéndolos disponibles en todos los controllers mediante decorators personalizados.
+
+#### Trazabilidad (Request ID)
+
+- Genera automáticamente un UUID único por petición.
+- Si el cliente envía el header `x-request-id`, la aplicación lo preserva para trazabilidad distribuida.
+- **Header de respuesta**: El ID se devuelve automáticamente al cliente en el header `x-request-id`.
+- **Logs automáticos**: Todos los logs generados durante la petición incluyen el `[ReqId: ...]`.
 
 #### Decorators Disponibles
 
@@ -720,22 +722,35 @@ Esta plantilla incluye un sistema de **Request Context** que captura automática
 - Si es inválido, retorna `'UTC'` como fallback
 - Default: `'UTC'`
 
+**`@GetRequestId()`** - Obtiene el ID único de la petición
+
+- Retorna el UUID generado o el proporcionado por el cliente en `x-request-id`.
+- Útil para incluir en logs manuales o devolver en el cuerpo de la respuesta.
+
 #### Uso en Controllers
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
-import { GetLanguage, GetTimeZone } from 'src/contexts/shared/decorators';
+import {
+  GetLanguage,
+  GetTimeZone,
+  GetRequestId,
+} from 'src/contexts/shared/decorators';
 import { Language } from 'src/contexts/shared/enums';
 
 @Controller('users')
 export class UsersController {
   @Get()
-  findAll(@GetLanguage() language: Language, @GetTimeZone() timezone: string) {
-    // language: 'en' | 'es' (tipado con enum)
-    // timezone: string (ej: 'America/Lima', 'UTC')
+  findAll(
+    @GetLanguage() language: Language,
+    @GetTimeZone() timezone: string,
+    @GetRequestId() requestId: string,
+  ) {
+    // language: 'en' | 'es'
+    // timezone: 'America/Lima'
+    // requestId: 'b15c9a8c-...'
 
-    // Usar para personalizar respuestas, formatear fechas, etc.
-    return this.service.findAll(language, timezone);
+    return this.service.findAll(language, timezone, requestId);
   }
 }
 ```
@@ -862,27 +877,7 @@ Esta plantilla está diseñada para ser un punto de partida sólido y production
 
 ### 🟢 Prioridad Alta (Recomendado para Producción)
 
-#### 1. **Request ID Tracking**
-
-Genera y rastrea un ID único para cada request, facilitando el debugging y trazabilidad en logs.
-
-**Implementación sugerida:**
-
-```typescript
-// Interceptor que genera UUID para cada request
-// Inyecta el ID en todos los logs automáticamente
-// Retorna el ID en header X-Request-ID
-```
-
-**Beneficios:**
-
-- ✅ Trazabilidad completa de requests en logs
-- ✅ Debugging más eficiente en producción
-- ✅ Correlación de requests en arquitecturas distribuidas
-
----
-
-#### 2. **Global Exception Filter**
+#### 1. **Global Exception Filter**
 
 Maneja todas las excepciones de forma consistente en un solo lugar.
 
@@ -908,7 +903,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
 ### 🟡 Prioridad Media (Útil para BFF)
 
-#### 3. **Compression Middleware**
+#### 2. **Compression Middleware**
 
 Comprime las respuestas HTTP usando gzip/brotli para reducir el tamaño de la transferencia.
 
@@ -934,7 +929,7 @@ await app.register(fastifyCompress, {
 
 ---
 
-#### 4. **Response Interceptor**
+#### 3. **Response Interceptor**
 
 Transforma todas las respuestas a un formato consistente con metadata adicional.
 
@@ -960,7 +955,7 @@ Transforma todas las respuestas a un formato consistente con metadata adicional.
 
 ---
 
-#### 5. **API Versioning**
+#### 4. **API Versioning**
 
 Permite mantener múltiples versiones de tu API simultáneamente.
 
@@ -991,7 +986,7 @@ export class UsersV2Controller {}
 
 ### 🔵 Prioridad Baja (Nice to Have)
 
-#### 6. **Custom Metadata Decorators**
+#### 5. **Custom Metadata Decorators**
 
 Crea decorators personalizados para roles, permisos, etc. Útil como preparación para autenticación futura.
 
@@ -1022,7 +1017,6 @@ export class AdminController {
 
 | Mejora                  | Prioridad | Complejidad | Impacto | Recomendado para |
 | ----------------------- | --------- | ----------- | ------- | ---------------- |
-| Request ID Tracking     | 🟢 Alta   | Baja        | Alto    | Producción       |
 | Global Exception Filter | 🟢 Alta   | Media       | Alto    | Producción       |
 | Compression             | 🟡 Media  | Baja        | Medio   | BFF              |
 | Response Interceptor    | 🟡 Media  | Baja        | Medio   | BFF              |

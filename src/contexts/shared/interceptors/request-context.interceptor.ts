@@ -4,6 +4,8 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { FastifyReply } from 'fastify';
+import { ClsService } from 'nestjs-cls';
 import { Observable } from 'rxjs';
 
 import { Language } from '../enums/language.enum';
@@ -12,8 +14,18 @@ import { normalizeTimeZone } from '../utils/timezone-validator.util';
 
 @Injectable()
 export class RequestContextInterceptor implements NestInterceptor {
+  constructor(private readonly cls: ClsService) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<RequestWithContext>();
+    const response = context.switchToHttp().getResponse<FastifyReply>();
+
+    const requestId = this.cls.getId();
+
+    // Set the x-request-id header in the response
+    if (requestId) {
+      void response.header('x-request-id', requestId);
+    }
 
     const acceptLanguage =
       (request.headers['accept-language'] as string)?.toLowerCase() || '';
@@ -25,6 +37,7 @@ export class RequestContextInterceptor implements NestInterceptor {
     request.context = {
       language,
       timezone,
+      requestId: requestId || '',
     };
 
     return next.handle();
